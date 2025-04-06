@@ -137,6 +137,11 @@ class UserInterface:
 
     def add_game(self):
         name = input("Введіть назву гри: ")
+
+        if self.catalog.get_game(name):
+            print(f"Гра з назвою '{name}' вже існує в каталозі.")
+            return
+
         genre = input("Введіть жанр гри: ")
 
         while True:
