@@ -16,34 +16,9 @@ class GameCatalog:
     def add_game(self, game):
         self.games.append(game)
 
-    def remove_game(self, game_name):
-        for game in self.games:
-            if game.name.lower() == game_name.lower():
-                self.games.remove(game)
-                print(f"Гра '{game_name}' видалена з каталогу.")
-                return
-        print(f"Гра '{game_name}' не знайдена.")
-
-    def edit_game(self, game_name, new_name=None, new_genre=None, new_players=None, new_duration=None):
-        for game in self.games:
-            if game.name.lower() == game_name.lower():
-                if new_name:
-                    game.name = new_name
-                if new_genre:
-                    game.genre = new_genre
-                if new_players:
-                    game.players = new_players
-                if new_duration:
-                    game.duration = new_duration
-                print(f"Гра '{game_name}' оновлена.")
-                return
-        print(f"Гра '{game_name}' не знайдена.")
-
     def get_game(self, game_name):
-        for game in self.games:
-            if game.name.lower() == game_name.lower():
-                return game
-        return None
+        matches = [game for game in self.games if game.name.lower() == game_name.lower()]
+        return matches
 
     def show_catalog(self):
         if not self.games:
@@ -52,7 +27,6 @@ class GameCatalog:
             print("Каталог настільних ігор:")
             for game in self.games:
                 print(game)
-
 
 
 class GameFilter:
@@ -97,16 +71,16 @@ class UserInterface:
     @staticmethod
     def display_menu():
         print(
-              "\n------------------------------------"
-              "\nМеню:\n"
-              "1. Додати гру\n"
-              "2. Видалити гру\n"
-              "3. Редагувати гру\n"
-              "4. Фільтрувати ігри за жанром\n"
-              "5. Фільтрувати ігри за кількістю гравців\n"
-              "6. Сортувати ігри\n"
-              "7. Показати каталог\n"
-              "8. Вихід\n"
+            "\n------------------------------------"
+            "\nМеню:\n"
+            "1. Додати гру\n"
+            "2. Видалити гру\n"
+            "3. Редагувати гру\n"
+            "4. Фільтрувати ігри за жанром\n"
+            "5. Фільтрувати ігри за кількістю гравців\n"
+            "6. Сортувати ігри\n"
+            "7. Показати каталог\n"
+            "8. Вихід\n"
         )
 
     def user_input(self):
@@ -137,11 +111,6 @@ class UserInterface:
 
     def add_game(self):
         name = input("Введіть назву гри: ")
-
-        if self.catalog.get_game(name):
-            print(f"Гра з назвою '{name}' вже існує в каталозі.")
-            return
-
         genre = input("Введіть жанр гри: ")
 
         while True:
@@ -170,14 +139,56 @@ class UserInterface:
 
     def remove_game(self):
         game_name = input("Введіть назву гри для видалення: ")
-        self.catalog.remove_game(game_name)
+        matches = self.catalog.get_game(game_name)
+
+        if not matches:
+            print(f"Гра '{game_name}' не знайдена.")
+            return
+
+        if len(matches) > 1:
+            print("Знайдено кілька ігор з такою назвою:")
+            for idx, game in enumerate(matches, 1):
+                print(f"{idx}. {game}")
+            while True:
+                try:
+                    selection = int(input("Оберіть номер гри для видалення: "))
+                    if 1 <= selection <= len(matches):
+                        game = matches[selection - 1]
+                        break
+                    else:
+                        print("Некоректний номер.")
+                except ValueError:
+                    print("Введіть число.")
+        else:
+            game = matches[0]
+
+        self.catalog.games.remove(game)
+        print(f"Гра '{game.name}' видалена з каталогу.")
 
     def edit_game(self):
         game_name = input("Введіть назву гри для редагування: ")
-        game = self.catalog.get_game(game_name)
-        if not game:
+        matches = self.catalog.get_game(game_name)
+
+        if not matches:
             print(f"Гра '{game_name}' не знайдена.")
             return
+
+        if len(matches) > 1:
+            print("Знайдено кілька ігор з такою назвою:")
+            for idx, game in enumerate(matches, 1):
+                print(f"{idx}. {game}")
+            while True:
+                try:
+                    selection = int(input("Оберіть номер гри для редагування: "))
+                    if 1 <= selection <= len(matches):
+                        game = matches[selection - 1]
+                        break
+                    else:
+                        print("Некоректний номер.")
+                except ValueError:
+                    print("Введіть число.")
+        else:
+            game = matches[0]
 
         new_name = input(f"Введіть нову назву (або залиште порожнім для старої): ")
         if new_name:
@@ -209,7 +220,7 @@ class UserInterface:
         if filtered_games:
             print("Ігри за жанром:")
             for game in filtered_games:
-                print(f"{game.name} ({game.genre}) - {game.players} гравців, {game.duration} хв")
+                print(game)
         else:
             print("Ігор з таким жанром не знайдено.")
 
@@ -221,7 +232,7 @@ class UserInterface:
                 if filtered_games:
                     print("Каталог настільних ігор:")
                     for game in filtered_games:
-                        print(f"{game.name} ({game.genre}) - {game.players} гравців, {game.duration} хв")
+                        print(game)
                 else:
                     print("Ігор з такою кількістю гравців не знайдено.")
                 break
@@ -230,10 +241,10 @@ class UserInterface:
 
     def sort_games(self):
         print(
-              "Як ви хочете сортувати ігри?\n"
-              "1. За назвою\n"
-              "2. За кількістю гравців\n"
-              "3. За тривалістю партії\n"
+            "Як ви хочете сортувати ігри?\n"
+            "1. За назвою\n"
+            "2. За кількістю гравців\n"
+            "3. За тривалістю партії\n"
         )
         criterion = input("Виберіть номер (1-3): ")
 
@@ -253,7 +264,6 @@ class UserInterface:
 
     def show_catalog(self):
         GameCatalogPrinter.print_catalog(self.catalog.games)
-
 
 
 if __name__ == "__main__":
